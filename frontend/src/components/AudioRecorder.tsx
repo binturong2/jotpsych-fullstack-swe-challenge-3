@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 const AudioRecorder = ({ onTranscriptionComplete }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -19,15 +19,17 @@ const AudioRecorder = ({ onTranscriptionComplete }) => {
   };
 
   useEffect(() => {
-    let interval;
+    if (isRecording && recordingTime >= MAX_RECORDING_TIME) {
+      stopRecording();
+    }
+  }, [isRecording, recordingTime]);
+
+  useEffect(() => {
+    let interval: number;
 
     if (isRecording) {
       interval = setInterval(() => {
-        if (recordingTime >= MAX_RECORDING_TIME) {
-          stopRecording();
-        } else {
-          setRecordingTime(recordingTime + 1);
-        }
+        setRecordingTime(prev => prev + 1);
       }, 1000);
     }
 
@@ -92,7 +94,7 @@ const AudioRecorder = ({ onTranscriptionComplete }) => {
         }`}
       >
         {isRecording
-          ? `Stop Recording (${5 - recordingTime}s)`
+          ? `Stop Recording (${MAX_RECORDING_TIME - recordingTime}s)`
           : "Start Recording"}
       </button>
       {isRecording && (
