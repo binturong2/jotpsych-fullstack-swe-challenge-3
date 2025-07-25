@@ -1,14 +1,64 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import time
 import random
-from typing import Dict, Optional, Literal
+import time
+from functools import wraps
+from typing import Dict, Literal, Optional
+
+from flask import Flask, jsonify, make_response, request
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, expose_headers=['X-Server-Version'])
 
-# TODO: Implement version tracking
 VERSION = "1.0.0"
+
+def parse_version(version_string):
+    try:
+        parts = version_string.split('.')
+        return {
+            'major': int(parts[0]),
+            'minor': int(parts[1]),
+            'patch': int(parts[2])
+        }
+    except (ValueError, IndexError):
+        return None
+
+def is_version_compatible(client_version, server_version):
+    client = parse_version(client_version)
+    server = parse_version(server_version)
+    
+    if not client or not server:
+        return False
+    
+    return client['major'] == server['major']
+
+def version_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        client_version = request.headers.get('X-Client-Version')
+        
+        if not client_version:
+            response = make_response(jsonify({
+                'error': 'Version header missing',
+                'message': 'X-Client-Version header is required'
+            }), 400)
+            response.headers['X-Server-Version'] = VERSION
+            return response
+        
+        if not is_version_compatible(client_version, VERSION):
+            response = make_response(jsonify({
+                'error': 'Version mismatch',
+                'message': f'Client version {client_version} is incompatible with server version {VERSION}. Please refresh your browser.',
+                'serverVersion': VERSION,
+                'clientVersion': client_version
+            }), 426)  # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/426
+            response.headers['X-Server-Version'] = VERSION
+            return response
+        
+        response = make_response(f(*args, **kwargs))
+        response.headers['X-Server-Version'] = VERSION
+        return response
+    
+    return decorated_function
 
 
 def process_transcription(job_id: str, audio_data: bytes):
@@ -42,6 +92,7 @@ def get_user_model_from_db(user_id: str) -> Literal["openai", "anthropic"]:
 
 
 @app.route('/transcribe', methods=['POST'])
+@version_required
 def transcribe_audio():
     result = process_transcription("xyz", "abcde")
 
