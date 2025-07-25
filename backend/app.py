@@ -35,11 +35,21 @@ def version_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         client_version = request.headers.get('X-Client-Version')
+        user_id = request.headers.get('X-User-ID')
+        print(f"Request to {request.path} - User ID: {user_id}, Client Version: {client_version}")
         
         if not client_version:
             response = make_response(jsonify({
                 'error': 'Version header missing',
                 'message': 'X-Client-Version header is required'
+            }), 400)
+            response.headers['X-Server-Version'] = VERSION
+            return response
+        
+        if not user_id:
+            response = make_response(jsonify({
+                'error': 'User ID header missing',
+                'message': 'X-User-ID header is required'
             }), 400)
             response.headers['X-Server-Version'] = VERSION
             return response

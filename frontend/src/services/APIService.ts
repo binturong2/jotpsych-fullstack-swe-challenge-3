@@ -1,4 +1,6 @@
 
+import { getUserId } from '../utils/userIdentity';
+
 interface APIResponse<T> {
   data?: T;
   error?: string;
@@ -8,7 +10,6 @@ interface APIResponse<T> {
 class APIService {
   private baseUrl: string =  "http://localhost:8000";
   private clientVersion: string = "1.0.0";
-  private userID: string = "1234567890";
   private versionMismatchHandled: boolean = false;
 
   // Generic request handler
@@ -20,7 +21,7 @@ class APIService {
     try {
       const headers: HeadersInit = {
         "X-Client-Version": this.clientVersion,
-        "X-User-ID": this.userID,
+        "X-User-ID": getUserId(),
       };
 
       // Add Content-Type header if body is a plain object (not FormData)
