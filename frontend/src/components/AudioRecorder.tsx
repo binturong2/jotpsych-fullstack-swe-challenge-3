@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import APIService from '../services/APIService';
 import { handleError } from '../utils/error';
+import Card from './ui/Card';
 
 interface AudioRecorderProps {
   onTranscriptionComplete: (text: string) => void;
@@ -73,7 +74,7 @@ const AudioRecorder = ({
             handleError('Error transcribing audio:', new Error(response.error));
             onTranscriptionComplete('');
           } else if (response.data) {
-            onTranscriptionComplete(response.data);
+            onTranscriptionComplete(response.data.transcription);
           }
         } catch (error) {
           handleError('Error sending audio', error as Error);
@@ -94,7 +95,7 @@ const AudioRecorder = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <Card>
       {finalRecordingTime > 0 && !isProcessing && (
         <p className="text-sm text-gray-600">
           Final recording time: {finalRecordingTime}s
@@ -126,7 +127,7 @@ const AudioRecorder = ({
           )}
         </>
       )}
-    </div>
+    </Card>
   );
 };
 

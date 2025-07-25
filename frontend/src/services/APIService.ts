@@ -61,14 +61,16 @@ class APIService {
   }
 
   // Updated transcribeAudio using the generic request handler
-  async transcribeAudio(audioBlob: Blob): Promise<APIResponse<string>> {
+  async transcribeAudio(audioBlob: Blob): Promise<APIResponse<{
+    transcription: string;
+    category?: string;
+    keywords?: string[];
+    confidence?: number;
+    model_used?: string;
+  }>> {
     const formData = new FormData();
     formData.append("audio", audioBlob);
-    const response = await this.makeRequest<{transcription: string}>("/transcribe", "POST", formData);
-    if (response.data && 'transcription' in response.data) {
-      return { data: response.data.transcription };
-    }
-    return { error: response.error || "Failed to transcribe audio" };
+    return this.makeRequest("/transcribe", "POST", formData);
   }
 }
 
