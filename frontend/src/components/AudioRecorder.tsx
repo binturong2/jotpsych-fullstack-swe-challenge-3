@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import APIService from '../services/APIService';
+import { handleError } from '../utils/error';
 
 interface AudioRecorderProps {
   onTranscriptionComplete: (text: string) => void;
@@ -62,21 +64,20 @@ const AudioRecorder = ({
 
       recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const formData = new FormData();
-        formData.append('audio', audioBlob);
 
         setIsProcessing(true);
 
         try {
-          // TODO: Use APIService for api requests
-          const response = await fetch('http://localhost:8000/transcribe', {
-            method: 'POST',
-            body: formData,
-          });
-          const data = await response.json();
-          onTranscriptionComplete(data.transcription);
+          const response = await APIService.transcribeAudio(audioBlob);
+          if (response.error) {
+            handleError('Error transcribing audio:', new Error(response.error));
+            onTranscriptionComplete('');
+          } else if (response.data) {
+            onTranscriptionComplete(response.data);
+          }
         } catch (error) {
-          console.error('Error sending audio:', error);
+          handleError('Error sending audio', error as Error);
+          onTranscriptionComplete('');
         } finally {
           setIsProcessing(false);
         }
@@ -88,7 +89,7 @@ const AudioRecorder = ({
       setMediaRecorder(recorder);
       setIsRecording(true);
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      handleError('Error accessing microphone:', error as Error);
     }
   };
 

@@ -46,8 +46,11 @@ class APIService {
   async transcribeAudio(audioBlob: Blob): Promise<APIResponse<string>> {
     const formData = new FormData();
     formData.append("audio", audioBlob);
-
-    return this.makeRequest<string>("/transcribe", "POST", formData);
+    const response = await this.makeRequest<{transcription: string}>("/transcribe", "POST", formData);
+    if (response.data && 'transcription' in response.data) {
+      return { data: response.data.transcription };
+    }
+    return { error: response.error || "Failed to transcribe audio" };
   }
 }
 
